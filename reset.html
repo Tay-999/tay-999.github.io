@@ -20,6 +20,7 @@
     <p style="margin-top: 20px; font-size: 13px;">If the app doesn't open, <a id="fallback" href="#">tap here</a>.</p>
   </div>
   <script>
+    document.getElementById('debug').textContent = window.location.href;
     const searchParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const code = searchParams.get('code') || hashParams.get('code');
