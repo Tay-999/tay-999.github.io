@@ -19,10 +19,20 @@
     <p style="margin-top: 20px; font-size: 13px;">If the app doesn't open, <a id="fallback" href="#">tap here</a>.</p>
   </div>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const code = searchParams.get('code') || hashParams.get('code');
+    const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token') || hashParams.get('refresh_token');
+
+    let deepLink = null;
     if (code) {
-      const deepLink = 'sceneit://reset-password?code=' + encodeURIComponent(code);
+      deepLink = 'sceneit://reset-password?code=' + encodeURIComponent(code);
+    } else if (accessToken && refreshToken) {
+      deepLink = 'sceneit://reset-password?access_token=' + encodeURIComponent(accessToken) + '&refresh_token=' + encodeURIComponent(refreshToken);
+    }
+
+    if (deepLink) {
       document.getElementById('fallback').href = deepLink;
       window.location.href = deepLink;
     } else {
