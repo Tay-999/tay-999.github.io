@@ -4,41 +4,64 @@
   <meta charset="utf-8" />
   <title>Scene It — Reset Password</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { background: #0a0a0a; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; text-align: center; padding: 20px; box-sizing: border-box; }
-    .card { max-width: 360px; }
-    h2 { font-size: 24px; margin-bottom: 12px; }
-    p { color: #888; font-size: 15px; line-height: 1.5; }
-    a { color: #5aa8d4; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a0a; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .card { background: #1a1a1a; border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 360px; border: 1px solid #222; text-align: center; }
+    h2 { font-size: 22px; margin-bottom: 8px; }
+    .sub { color: #888; font-size: 14px; margin-bottom: 24px; }
+    input { width: 100%; background: #0a0a0a; border: 1px solid #333; border-radius: 10px; padding: 14px 16px; color: #fff; font-size: 15px; margin-bottom: 14px; }
+    button { width: 100%; background: #3078a1; border: none; border-radius: 10px; padding: 14px; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; }
+    button:disabled { opacity: 0.5; }
+    .error { color: #E50914; font-size: 13px; margin-bottom: 14px; }
+    .success { color: #00b300; font-size: 15px; line-height: 1.5; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>🎬 Scene It</h2>
-    <p id="debug" style="font-size:11px; color:#444; word-break:break-all;"></p>
-    <p>Opening the app to reset your password…</p>
-    <p style="margin-top: 20px; font-size: 13px;">If the app doesn't open, <a id="fallback" href="#">tap here</a>.</p>
+    <p class="sub">Set a new password for your account</p>
+    <div id="form">
+      <div class="error" id="error" style="display:none"></div>
+      <input type="password" id="password" placeholder="New password" />
+      <input type="password" id="confirm" placeholder="Confirm new password" />
+      <button id="btn" onclick="resetPassword()">Update Password</button>
+    </div>
+    <div id="done" style="display:none">
+      <p class="success">✓ Password updated!<br/><br/>Go back to the app and sign in with your new password.</p>
+    </div>
   </div>
   <script>
-    document.getElementById('debug').textContent = window.location.href;
-    const searchParams = new URLSearchParams(window.location.search);
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const code = searchParams.get('code') || hashParams.get('code');
-    const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token') || hashParams.get('refresh_token');
+    const { createClient } = window.supabase
+    const supabaseClient = createClient(
+      'https://uvzaiucftahlltrsceef.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2emFpdWNmdGFobGx0cnNjZWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDUzNDIsImV4cCI6MjA4ODM4MTM0Mn0.jokJSzv_kQzp6_m-aO8gt2Bre-1VoNGFOjeyRObCib0'
+    )
 
-    let deepLink = null;
-    if (code) {
-      deepLink = 'sceneit://reset-password?code=' + encodeURIComponent(code);
-    } else if (accessToken && refreshToken) {
-      deepLink = 'sceneit://reset-password?access_token=' + encodeURIComponent(accessToken) + '&refresh_token=' + encodeURIComponent(refreshToken);
+    supabaseClient.auth.getSession()
+
+    async function resetPassword() {
+      const password = document.getElementById('password').value
+      const confirm = document.getElementById('confirm').value
+      const errorEl = document.getElementById('error')
+      errorEl.style.display = 'none'
+
+      if (!password || password.length < 6) { showError('Password must be at least 6 characters.'); return }
+      if (password !== confirm) { showError('Passwords do not match.'); return }
+
+      document.getElementById('btn').disabled = true
+      const { error } = await supabaseClient.auth.updateUser({ password })
+      if (error) { showError(error.message); document.getElementById('btn').disabled = false; return }
+
+      document.getElementById('form').style.display = 'none'
+      document.getElementById('done').style.display = 'block'
     }
 
-    if (deepLink) {
-      document.getElementById('fallback').href = deepLink;
-      window.location.href = deepLink;
-    } else {
-      document.querySelector('p').textContent = 'Invalid or expired reset link. Please request a new one.';
+    function showError(msg) {
+      const el = document.getElementById('error')
+      el.textContent = msg
+      el.style.display = 'block'
     }
   </script>
 </body>
